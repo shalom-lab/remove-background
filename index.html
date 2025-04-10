@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remove Background</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4F46E5;
+            --primary-hover: #4338CA;
+            --success-color: #10B981;
+            --error-color: #EF4444;
+            --background-color: #F9FAFB;
+            --card-background: #FFFFFF;
+            --text-primary: #111827;
+            --text-secondary: #6B7280;
+            --border-color: #E5E7EB;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            background-color: var(--card-background);
+            border-radius: 1rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-title {
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+            background: linear-gradient(120deg, var(--primary-color), #9333EA);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-links {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .header-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border: 1px solid var(--border-color);
+        }
+
+        .header-link:hover {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+            transform: translateY(-1px);
+        }
+
+        .header-link svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .status-bar {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            text-align: center;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .status-bar.loading {
+            color: var(--primary-color);
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--primary-color);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .status-bar.loading .spinner {
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Remove old loading animation */
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .status-bar.loading {
+            animation: none;
+        }
+
+        .image-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .image-box {
+            background-color: var(--background-color);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 2px dashed var(--border-color);
+            transition: all 0.3s ease;
+            min-height: 300px;
+        }
+
+        .image-box:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .image-box h3 {
+            font-size: 1.25rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .image-box img {
+            max-width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            border-radius: 0.5rem;
+            display: none;
+            transition: all 0.3s ease;
+        }
+
+        .image-box img.visible {
+            display: block;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .button-wrapper {
+            flex: 0 1 auto;
+        }
+
+        .upload-btn {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: var(--primary-color);
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .upload-btn:hover:not(:disabled) {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .upload-btn:disabled {
+            background-color: var(--text-secondary);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .upload-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        #downloadBtn {
+            background-color: var(--success-color);
+        }
+
+        #downloadBtn:hover:not(:disabled) {
+            background-color: #059669;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .header-title {
+                font-size: 2rem;
+            }
+
+            .header-links {
+                justify-content: center;
+            }
+
+            .image-container {
+                grid-template-columns: 1fr;
+            }
+
+            .button-container {
+                flex-direction: column;
+            }
+
+            .button-wrapper {
+                width: 100%;
+            }
+
+            .upload-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Hover effects */
+        .image-box img.visible:hover {
+            transform: scale(1.02);
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--card-background);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-md);
+            max-width: 90%;
+            width: 400px;
+            z-index: 1001;
+            animation: slideIn 0.3s ease;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .modal-content {
+            margin-bottom: 1.5rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .modal-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .modal-btn-secondary {
+            background-color: var(--background-color);
+            color: var(--text-primary);
+        }
+
+        .modal-btn-secondary:hover {
+            background-color: var(--border-color);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { 
+                opacity: 0;
+                transform: translate(-50%, -60%);
+            }
+            to { 
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Add modal HTML -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal">
+            <div class="modal-title">Download Model</div>
+            <div class="modal-content">
+                No cached model found. Download from network?<br>
+                <small>(First time requires model download)</small>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-secondary" onclick="handleModalResponse(false)">Cancel</button>
+                <button class="modal-btn modal-btn-primary" onclick="handleModalResponse(true)">Download</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <header class="header">
+            <h1 class="header-title">Remove Background</h1>
+            <div class="header-links">
+                <a href="https://github.com/shalom-lab/toolkit" target="_blank" rel="noopener noreferrer" class="header-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                    </svg>
+                    GitHub
+                </a>
+                <a href="https://twitter.com/share?url=https://shalom-lab.github.io/remove-background&text=Try this amazing background removal tool!" target="_blank" rel="noopener noreferrer" class="header-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
+                    </svg>
+                    Share
+                </a>
+            </div>
+        </header>
+        <div class="status-bar" id="statusBar">
+            <div class="spinner"></div>
+            <span class="status-text">Ready to process images</span>
+        </div>
+
+        <div class="image-container">
+            <div class="image-box">
+                <h3>Original Image</h3>
+                <img id="originalImage" src="" alt="Original Image">
+            </div>
+            <div class="image-box">
+                <h3>Result</h3>
+                <img id="resultImage" src="" alt="Result Image">
+            </div>
+        </div>
+
+        <div class="button-container">
+            <div class="button-wrapper">
+                <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                <button class="upload-btn" onclick="document.getElementById('imageInput').click()" id="upload-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Upload Image
+                </button>
+            </div>
+            <div class="button-wrapper">
+                <button id="removeBackgroundBtn" class="upload-btn" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"></path>
+                        <line x1="16" y1="5" x2="22" y2="5"></line>
+                        <line x1="19" y1="2" x2="19" y2="8"></line>
+                    </svg>
+                    Remove Background
+                </button>
+            </div>
+            <div class="button-wrapper">
+                <button id="downloadBtn" class="upload-btn" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Download
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.2';
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('ServiceWorker registration failed:', error);
+                    });
+            });
+        }
+
+        let pipe = null;
+        const statusBar = document.getElementById('statusBar');
+        const removeBackgroundBtn = document.getElementById('removeBackgroundBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const originalImage = document.getElementById('originalImage');
+        const resultImage = document.getElementById('resultImage');
+        let originalFileName = '';
+        let modalResolve = null;
+
+        // Update status bar
+        function updateStatus(message) {
+            const statusText = statusBar.querySelector('.status-text');
+            
+            // Define status messages with emojis
+            const statusWithEmoji = {
+                "Ready to process images": "🎯 Ready to process images",
+                "Checking local cache...": "🔍 Checking local cache...",
+                "Loading cached model...": "📦 Loading cached model...",
+                "Model loaded from cache!": "✨ Model loaded from cache!",
+                "Downloading model...": "⬇️ Downloading model...",
+                "Model ready!": "🚀 Model ready!",
+                "Loading cancelled. Refresh to retry.": "❌ Loading cancelled. Refresh to retry.",
+                "Loading failed. Check connection and refresh.": "⚠️ Loading failed. Check connection and refresh.",
+                "Model not loaded. Please wait...": "⏳ Model not loaded. Please wait...",
+                "Image uploaded. Click 'Remove Background' to process.": "📸 Image uploaded. Click 'Remove Background' to process.",
+                "Processing...": "⚡ Processing...",
+                "Done!": "✅ Done!",
+                "Processing failed. Please try again.": "❌ Processing failed. Please try again."
+            };
+
+            // Add emoji to message if it exists in the mapping
+            const messageWithEmoji = statusWithEmoji[message] || message;
+            statusText.textContent = messageWithEmoji;
+            
+            // Add loading class for specific messages
+            const loadingMessages = [
+                "🔍 Checking local cache...",
+                "📦 Loading cached model...",
+                "⬇️ Downloading model...",
+                "⚡ Processing..."
+            ];
+            
+            if (loadingMessages.includes(messageWithEmoji)) {
+                statusBar.classList.add('loading');
+            } else {
+                statusBar.classList.remove('loading');
+            }
+        }
+
+        // Show/hide image
+        function toggleImageVisibility(img, show) {
+            if (show) {
+                img.classList.add('visible');
+            } else {
+                img.classList.remove('visible');
+            }
+        }
+
+        // Download function
+        function downloadResult() {
+            const link = document.createElement('a');
+            // 从原始文件名中提取基本名称（不包含扩展名）
+            const baseName = originalFileName.substring(0, originalFileName.lastIndexOf('.')) || originalFileName;
+            link.download = `${baseName}_rmbg.png`;
+            link.href = resultImage.src;
+            link.click();
+        }
+
+        // Custom confirm dialog
+        function showConfirmDialog(message) {
+            return new Promise((resolve) => {
+                modalResolve = resolve;
+                const modal = document.getElementById('confirmModal');
+                modal.style.display = 'block';
+            });
+        }
+
+        // Handle modal button clicks
+        window.handleModalResponse = function(response) {
+            const modal = document.getElementById('confirmModal');
+            modal.style.display = 'none';
+            if (modalResolve) {
+                modalResolve(response);
+                modalResolve = null;
+            }
+        };
+
+        // Initialize the pipeline
+        async function initializePipeline() {
+            try {
+                updateStatus("Checking local cache...");
+                document.getElementById('upload-btn').disabled = true;
+
+                try {
+                    updateStatus("Loading cached model...");
+                    pipe = await pipeline("image-segmentation", "briaai/RMBG-1.4", {
+                        trust_remote_code: true,
+                        cache: true,
+                        local_files_only: true
+                    });
+                    updateStatus("Model loaded from cache!");
+                } catch (cacheError) {
+                    // Replace confirm with custom dialog
+                    const loadFromNetwork = await showConfirmDialog();
+                    
+                    if (loadFromNetwork) {
+                        updateStatus("Downloading model...");
+                        pipe = await pipeline("image-segmentation", "briaai/RMBG-1.4", {
+                            trust_remote_code: true,
+                            cache: true
+                        });
+                        updateStatus("Model ready!");
+                    } else {
+                        throw new Error("Model loading cancelled");
+                    }
+                }
+
+                document.getElementById('upload-btn').disabled = false;
+            } catch (error) {
+                console.error('Error loading model:', error);
+                updateStatus(error.message === "Model loading cancelled" 
+                    ? "Loading cancelled. Refresh to retry." 
+                    : "Loading failed. Check connection and refresh.");
+                document.getElementById('upload-btn').disabled = true;
+                throw error;
+            }
+        }
+
+        // Initialize the pipeline when the page loads
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                document.getElementById('upload-btn').disabled = true;
+                await initializePipeline();
+            } catch (error) {
+                console.error('Failed to initialize pipeline:', error);
+            }
+        });
+
+        // Handle file input change
+        document.getElementById('imageInput').addEventListener('change', async function (e) {
+            if (pipe == null) {
+                updateStatus("Model not loaded. Please wait...");
+                removeBackgroundBtn.disabled = true;
+                downloadBtn.disabled = true;
+                toggleImageVisibility(originalImage, false);
+                toggleImageVisibility(resultImage, false);
+                return;
+            }
+            const file = e.target.files[0];
+            if (!file) {
+                removeBackgroundBtn.disabled = true;
+                downloadBtn.disabled = true;
+                toggleImageVisibility(originalImage, false);
+                toggleImageVisibility(resultImage, false);
+                return;
+            }
+            // Store original file name
+            originalFileName = file.name;
+            // Show original image
+            originalImage.src = URL.createObjectURL(file);
+            toggleImageVisibility(originalImage, true);
+            toggleImageVisibility(resultImage, false);
+            removeBackgroundBtn.disabled = false;
+            downloadBtn.disabled = true;  // Always disable download button when new image is uploaded
+            updateStatus("Image uploaded. Click 'Remove Background' to process.");
+        });
+
+        // Handle remove background button click
+        document.getElementById('removeBackgroundBtn').addEventListener('click', async function () {
+            updateStatus("Processing...");
+            removeBackgroundBtn.disabled = true;
+            downloadBtn.disabled = true;  // Ensure download button is disabled during processing
+
+            try {
+                const pillow_mask = await pipe(originalImage.src);
+                console.log('Pipeline output:', pillow_mask);
+
+                if (!pillow_mask || !pillow_mask[0] || !pillow_mask[0].mask) {
+                    throw new Error('Invalid model output');
+                }
+
+                const mask = pillow_mask[0].mask;
+                console.log('Mask dimensions:', { width: mask.width, height: mask.height });
+
+                // Get original image dimensions
+                const orig_width = originalImage.naturalWidth;
+                const orig_height = originalImage.naturalHeight;
+
+                // Create canvas for result
+                const canvas = document.createElement('canvas');
+                canvas.width = orig_width;
+                canvas.height = orig_height;
+                const ctx = canvas.getContext('2d');
+
+                // Draw original image first
+                ctx.drawImage(originalImage, 0, 0);
+                const imageData = ctx.getImageData(0, 0, orig_width, orig_height);
+
+                // Process mask data
+                if (!mask || !mask.data || !mask.width || !mask.height) {
+                    throw new Error('Invalid mask data');
+                }
+
+                // Convert mask data to array
+                const maskArray = new Float32Array(mask.width * mask.height);
+                let min = Infinity;
+                let max = -Infinity;
+
+                // Find min and max values
+                for (let i = 0; i < mask.width * mask.height; i++) {
+                    const value = mask.data[i] || 0;
+                    maskArray[i] = value;
+                    min = Math.min(min, value);
+                    max = Math.max(max, value);
+                }
+
+                // Normalize values
+                for (let i = 0; i < maskArray.length; i++) {
+                    maskArray[i] = (maskArray[i] - min) / (max - min);
+                }
+
+                // Apply mask to image alpha channel
+                const data = imageData.data;
+                const scaleX = orig_width / mask.width;
+                const scaleY = orig_height / mask.height;
+
+                for (let y = 0; y < orig_height; y++) {
+                    for (let x = 0; x < orig_width; x++) {
+                        // Calculate mask position
+                        const maskX = Math.floor(x / scaleX);
+                        const maskY = Math.floor(y / scaleY);
+                        const maskIndex = maskY * mask.width + maskX;
+                        
+                        // Calculate target image position
+                        const imageIndex = (y * orig_width + x) * 4;
+                        
+                        // Set alpha channel
+                        const alpha = Math.round(maskArray[maskIndex] * 255);
+                        data[imageIndex + 3] = alpha;
+                    }
+                }
+
+                // Put processed data back to canvas
+                ctx.putImageData(imageData, 0, 0);
+
+                // Convert to PNG and display
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        resultImage.src = URL.createObjectURL(blob);
+                        toggleImageVisibility(resultImage, true);
+                        updateStatus("Done!");
+                        downloadBtn.disabled = false;  // Enable download button only after successful processing
+                    } else {
+                        console.error('Failed to create image blob.');
+                        updateStatus("Processing failed. Please try again.");
+                        downloadBtn.disabled = true;  // Ensure download button stays disabled on failure
+                    }
+                }, 'image/png');
+            } catch (error) {
+                console.error('Error processing image:', error);
+                updateStatus("Processing failed: " + error.message);
+                toggleImageVisibility(resultImage, false);
+                downloadBtn.disabled = true;  // Ensure download button stays disabled on error
+            } finally {
+                removeBackgroundBtn.disabled = false;
+            }
+        });
+
+        // Handle download button click
+        downloadBtn.addEventListener('click', downloadResult);
+    </script>
+</body>
+
+</html>
