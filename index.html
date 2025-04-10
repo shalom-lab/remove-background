@@ -571,16 +571,33 @@
                 updateStatus("Checking local cache...");
                 document.getElementById('upload-btn').disabled = true;
 
-                try {
+                // Check if model is cached in Service Worker
+                const modelFiles = [
+                    'https://huggingface.co/briaai/RMBG-1.4/resolve/main/config.json',
+                    'https://huggingface.co/briaai/RMBG-1.4/resolve/main/pytorch_model.bin'
+                ];
+
+                let allCached = true;
+                if ('caches' in window) {
+                    const cache = await caches.open('rmbg-model-cache-v1');
+                    for (const url of modelFiles) {
+                        const response = await cache.match(url);
+                        if (!response) {
+                            allCached = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (allCached) {
                     updateStatus("Loading cached model...");
                     pipe = await pipeline("image-segmentation", "briaai/RMBG-1.4", {
                         trust_remote_code: true,
-                        cache: true,
-                        local_files_only: true
+                        cache: true
                     });
                     updateStatus("Model loaded from cache!");
-                } catch (cacheError) {
-                    // Replace confirm with custom dialog
+                } else {
+                    // Show confirm dialog for downloading
                     const loadFromNetwork = await showConfirmDialog();
                     
                     if (loadFromNetwork) {
