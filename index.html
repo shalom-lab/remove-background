@@ -636,8 +636,10 @@
                 "Model not loaded. Please wait...": "⏳ Model not loaded. Please wait...",
                 "Image uploaded. Click 'Remove Background' to process.": "📸 Image uploaded. Click 'Remove Background' to process.",
                 "Processing...": "⚡ Processing...",
-                "Done!": "✅ Done!",
-                "Processing failed. Please try again.": "❌ Processing failed. Please try again."
+                "Done!": "✨ Done! 🎉 🎊 🌟",
+                "Processing failed. Please try again.": "❌ Processing failed. Please try again.",
+                "Loading image from URL...": "🔗 Loading image from URL...",
+                "Image loaded successfully": "✅ Image loaded successfully!"
             };
 
             // Add emoji to message if it exists in the mapping, otherwise add 'ℹ️' as default
@@ -804,30 +806,73 @@
             }
         }
 
+        // Handle clipboard paste
+        document.addEventListener('paste', async (e) => {
+            // Don't prevent default for text inputs
+            const activeElement = document.activeElement;
+            if (activeElement.tagName === 'INPUT' && activeElement.type === 'text') {
+                return;
+            }
+
+            e.preventDefault();
+            const items = e.clipboardData?.items;
+            
+            if (!items) return;
+
+            let handled = false;
+            
+            // First try to find an image
+            for (const item of items) {
+                if (item.type.startsWith('image/')) {
+                    const blob = item.getAsFile();
+                    if (blob) {
+                        handleImageData(blob, 'clipboard-image.png');
+                        handled = true;
+                        break;
+                    }
+                }
+            }
+
+            // If no image found, try to find text that might be an image URL
+            if (!handled) {
+                for (const item of items) {
+                    if (item.type === 'text/plain') {
+                        item.getAsString(text => {
+                            const urlInput = document.getElementById('imageUrl');
+                            if (text.trim().toLowerCase().match(/^https?:\/\/.+\.(png|jpg|jpeg|gif|webp)$/i)) {
+                                urlInput.value = text;
+                                loadImageFromUrl();
+                            }
+                        });
+                        break;
+                    }
+                }
+            }
+        });
+
         // Add keyboard event listener for URL input
-        document.getElementById('imageUrl').addEventListener('keypress', (e) => {
+        const urlInput = document.getElementById('imageUrl');
+        
+        urlInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 loadImageFromUrl();
             }
         });
 
-        // Handle clipboard paste
-        document.addEventListener('paste', async (e) => {
-            e.preventDefault();
-            const items = e.clipboardData?.items;
-            
-            if (!items) return;
+        // Auto select content when input is focused
+        urlInput.addEventListener('focus', function() {
+            this.select();
+        });
 
-            for (const item of items) {
-                if (item.type.startsWith('image/')) {
-                    const blob = item.getAsFile();
-                    if (blob) {
-                        handleImageData(blob, 'clipboard-image.png');
-                        break;
-                    }
+        // Handle paste event for URL input
+        urlInput.addEventListener('paste', function(e) {
+            // Don't prevent default for URL input
+            setTimeout(() => {
+                if (this.value.trim()) {
+                    loadImageFromUrl();
                 }
-            }
+            }, 100);
         });
 
         // Handle drag and drop
@@ -1002,5 +1047,4 @@
     </script>
 </body>
 
-</html>
 </html>
