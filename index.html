@@ -203,6 +203,7 @@
         }
 
         .image-box {
+            position: relative;
             background-color: var(--background-color);
             border-radius: 0.75rem;
             padding: 1.5rem;
@@ -431,6 +432,62 @@
                 transform: translate(-50%, -50%);
             }
         }
+
+        /* Add new styles for URL input and drag-drop */
+        .url-input-wrapper {
+            display: flex;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        .url-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .url-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+        }
+
+        .image-box {
+            position: relative;
+            background-color: var(--background-color);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 2px dashed var(--border-color);
+            transition: all 0.3s ease;
+            min-height: 300px;
+        }
+
+        .image-box.drag-over {
+            border-color: var(--primary-color);
+            background-color: rgba(79, 70, 229, 0.05);
+        }
+
+        .image-box .drag-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            text-align: center;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .image-box img.visible + .drag-text {
+            display: none;
+        }
     </style>
 </head>
 
@@ -485,9 +542,13 @@
         </div>
 
         <div class="image-container">
-            <div class="image-box">
+            <div class="image-box" id="dropZone">
                 <h3>Original Image</h3>
                 <img id="originalImage" src="" alt="Original Image">
+                <div class="drag-text">
+                    Drop image here<br>
+                    <small>or paste from clipboard</small>
+                </div>
             </div>
             <div class="image-box">
                 <h3>Result</h3>
@@ -496,6 +557,17 @@
         </div>
 
         <div class="button-container">
+            <div class="button-wrapper url-input-wrapper">
+                <input type="text" id="imageUrl" placeholder="Enter image URL..." class="url-input">
+                <button class="upload-btn" onclick="loadImageFromUrl()" id="url-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                    </svg>
+                    Load URL
+                </button>
+            </div>
             <div class="button-wrapper">
                 <input type="file" id="imageInput" accept="image/*" style="display: none;">
                 <button class="upload-btn" onclick="document.getElementById('imageInput').click()" id="upload-btn">
@@ -542,6 +614,7 @@
         const downloadBtn = document.getElementById('downloadBtn');
         const originalImage = document.getElementById('originalImage');
         const resultImage = document.getElementById('resultImage');
+        const dropZone = document.getElementById('dropZone');
         let originalFileName = '';
         let modalResolve = null;
 
@@ -680,8 +753,94 @@
             }
         });
 
-        // Handle file input change
-        document.getElementById('imageInput').addEventListener('change', async function (e) {
+        // Load image from URL
+        async function loadImageFromUrl() {
+            const urlInput = document.getElementById('imageUrl');
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                updateStatus("Please enter a valid URL");
+                return;
+            }
+
+            try {
+                updateStatus("Loading image from URL...");
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Failed to fetch image');
+                
+                const blob = await response.blob();
+                if (!blob.type.startsWith('image/')) {
+                    throw new Error('URL does not point to an image');
+                }
+
+                const fileName = url.split('/').pop() || 'image.png';
+                handleImageData(blob, fileName);
+                urlInput.value = ''; // Clear input after successful load
+            } catch (error) {
+                console.error('Error loading image from URL:', error);
+                updateStatus("Failed to load image from URL");
+            }
+        }
+
+        // Handle clipboard paste
+        document.addEventListener('paste', async (e) => {
+            e.preventDefault();
+            const items = e.clipboardData?.items;
+            
+            if (!items) return;
+
+            for (const item of items) {
+                if (item.type.startsWith('image/')) {
+                    const blob = item.getAsFile();
+                    if (blob) {
+                        handleImageData(blob, 'clipboard-image.png');
+                        break;
+                    }
+                }
+            }
+        });
+
+        // Handle drag and drop
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            
+            const items = e.dataTransfer?.items || e.dataTransfer?.files;
+            
+            if (!items) return;
+
+            // Handle both DataTransferItemList and FileList
+            if (items instanceof DataTransferItemList) {
+                for (const item of items) {
+                    if (item.type.startsWith('image/')) {
+                        const file = item.getAsFile();
+                        if (file) {
+                            handleImageData(file, file.name);
+                            break;
+                        }
+                    }
+                }
+            } else if (items instanceof FileList) {
+                for (const file of items) {
+                    if (file.type.startsWith('image/')) {
+                        handleImageData(file, file.name);
+                        break;
+                    }
+                }
+            }
+        });
+
+        // Common function to handle image data
+        function handleImageData(blob, fileName) {
             if (pipe == null) {
                 updateStatus("Model not loaded. Please wait...");
                 removeBackgroundBtn.disabled = true;
@@ -690,23 +849,21 @@
                 toggleImageVisibility(resultImage, false);
                 return;
             }
-            const file = e.target.files[0];
-            if (!file) {
-                removeBackgroundBtn.disabled = true;
-                downloadBtn.disabled = true;
-                toggleImageVisibility(originalImage, false);
-                toggleImageVisibility(resultImage, false);
-                return;
-            }
-            // Store original file name
-            originalFileName = file.name;
-            // Show original image
-            originalImage.src = URL.createObjectURL(file);
+
+            originalFileName = fileName;
+            originalImage.src = URL.createObjectURL(blob);
             toggleImageVisibility(originalImage, true);
             toggleImageVisibility(resultImage, false);
             removeBackgroundBtn.disabled = false;
-            downloadBtn.disabled = true;  // Always disable download button when new image is uploaded
-            updateStatus("Image uploaded. Click 'Remove Background' to process.");
+            downloadBtn.disabled = true;
+            updateStatus("Image loaded. Click 'Remove Background' to process.");
+        }
+
+        // Handle file input change
+        document.getElementById('imageInput').addEventListener('change', async function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            handleImageData(file, file.name);
         });
 
         // Handle remove background button click

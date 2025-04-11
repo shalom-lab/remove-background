@@ -68,6 +68,12 @@ const fetchWithProgress = async (request, client) => {
 // Fetch event handler
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
+    
+    // Skip non-HTTP(S) requests
+    if (!url.protocol.startsWith('http')) {
+        return;
+    }
+
     const isHuggingFace = url.hostname === 'huggingface.co' || url.hostname.endsWith('huggingface.co');
 
     // For Hugging Face requests, add progress tracking
@@ -84,8 +90,10 @@ self.addEventListener('fetch', event => {
                 const networkResponse = await fetchWithProgress(event.request, client);
                 
                 if (networkResponse && networkResponse.ok) {
+                    // Clone the response before caching
+                    const responseToCache = networkResponse.clone();
                     const cache = await caches.open(CACHE_NAME);
-                    cache.put(event.request, networkResponse.clone());
+                    await cache.put(event.request, responseToCache);
                 }
                 return networkResponse;
             })
@@ -102,8 +110,14 @@ self.addEventListener('fetch', event => {
 
             return fetch(event.request).then(networkResponse => {
                 if (networkResponse && networkResponse.ok) {
-                    const cache = caches.open(CACHE_NAME);
-                    cache.then(c => c.put(event.request, networkResponse.clone()));
+                    // Clone the response before using it
+                    const responseToCache = networkResponse.clone();
+                    // Wait for the cache operation to complete
+                    return caches.open(CACHE_NAME)
+                        .then(cache => {
+                            cache.put(event.request, responseToCache);
+                            return networkResponse;
+                        });
                 }
                 return networkResponse;
             });
