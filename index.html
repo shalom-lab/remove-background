@@ -765,22 +765,52 @@
 
             try {
                 updateStatus("Loading image from URL...");
-                const response = await fetch(url);
-                if (!response.ok) throw new Error('Failed to fetch image');
                 
-                const blob = await response.blob();
-                if (!blob.type.startsWith('image/')) {
-                    throw new Error('URL does not point to an image');
-                }
+                // Create a new image element to check if the URL is valid
+                const img = new Image();
+                img.crossOrigin = "anonymous";  // Enable CORS
+                
+                // Create a promise to handle image loading
+                const imageLoadPromise = new Promise((resolve, reject) => {
+                    img.onload = () => resolve(img);
+                    img.onerror = () => reject(new Error('Failed to load image'));
+                });
 
+                // Start loading the image
+                img.src = url;
+                
+                // Wait for image to load
+                await imageLoadPromise;
+                
+                // Convert image to blob
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                
+                // Get blob from canvas
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                
+                // Extract filename from URL
                 const fileName = url.split('/').pop() || 'image.png';
                 handleImageData(blob, fileName);
                 urlInput.value = ''; // Clear input after successful load
+                
+                updateStatus("Image loaded successfully");
             } catch (error) {
                 console.error('Error loading image from URL:', error);
-                updateStatus("Failed to load image from URL");
+                updateStatus("Failed to load image from URL. Make sure the URL is correct and the image is accessible.");
             }
         }
+
+        // Add keyboard event listener for URL input
+        document.getElementById('imageUrl').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                loadImageFromUrl();
+            }
+        });
 
         // Handle clipboard paste
         document.addEventListener('paste', async (e) => {
@@ -972,4 +1002,5 @@
     </script>
 </body>
 
+</html>
 </html>
