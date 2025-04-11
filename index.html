@@ -700,7 +700,7 @@
             }
         };
 
-        // Add progress tracking
+        // Update progress
         function updateProgress(loaded, total) {
             const progressBar = document.querySelector('.progress-bar-inner');
             const percentage = (loaded / total) * 100;
@@ -709,7 +709,8 @@
             // Update status text with progress
             const statusText = document.querySelector('.status-text');
             const downloadSpeed = (loaded / 1024 / 1024).toFixed(1); // Convert to MB
-            statusText.textContent = `⬇️ Downloading model... ${downloadSpeed}MB / ${(total / 1024 / 1024).toFixed(1)}MB`;
+            const totalSize = (total / 1024 / 1024).toFixed(1); // Convert to MB
+            updateStatus(`Downloading model... ${downloadSpeed}MB / ${totalSize}MB`);
         }
 
         // Initialize the pipeline when the page loads
@@ -717,8 +718,21 @@
             // Register Service Worker
             if ('serviceWorker' in navigator) {
                 try {
-                    const registration = await navigator.serviceWorker.register('/sw.js');
+                    const registration = await navigator.serviceWorker.register('sw.js', {
+                        scope: './'
+                    });
                     console.log('Service Worker registered with scope:', registration.scope);
+
+                    // Set up Service Worker message handler for progress updates
+                    navigator.serviceWorker.addEventListener('message', event => {
+                        console.log('Received message from Service Worker:', event.data);
+                        if (event.data.type === 'download_progress') {
+                            const progressBar = document.querySelector('.progress-bar');
+                            progressBar.style.display = 'block';
+                            progressBar.style.opacity = '1';
+                            updateProgress(event.data.loaded, event.data.total);
+                        }
+                    });
                 } catch (error) {
                     console.log('Service Worker registration failed:', error);
                 }
@@ -726,31 +740,19 @@
 
             try {
                 document.getElementById('upload-btn').disabled = true;
-                updateStatus("🔍 Checking local cache...");
-
-                // Set up Service Worker message handler for progress updates
-                if (navigator.serviceWorker.controller) {
-                    navigator.serviceWorker.addEventListener('message', event => {
-                        if (event.data.type === 'download_progress') {
-                            updateProgress(event.data.loaded, event.data.total);
-                            // Update status text with progress
-                            updateStatus(`⬇️ Downloading model... ${(event.data.loaded / 1024 / 1024).toFixed(1)}MB / ${(event.data.total / 1024 / 1024).toFixed(1)}MB`);
-                        }
-                    });
-                }
+                updateStatus("Checking local cache...");
 
                 // Initialize pipeline
-                updateStatus("📦 Loading model...");
+                updateStatus("Loading model...");
                 pipe = await pipeline("image-segmentation", "briaai/RMBG-1.4", {
                     trust_remote_code: true
-                    //dtype: 'q8'
                 });
 
-                updateStatus("✨ Model ready!");
+                updateStatus("Model ready!");
                 document.getElementById('upload-btn').disabled = false;
             } catch (error) {
                 console.error('Pipeline initialization failed:', error);
-                updateStatus("⚠️ Loading failed. Check connection and refresh.");
+                updateStatus("Loading failed. Check connection and refresh.");
                 document.getElementById('upload-btn').disabled = true;
             }
         });
