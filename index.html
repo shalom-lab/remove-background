@@ -5,8 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Free Background Remover - Remove Image Background Online</title>
-    <meta name="description" content="Free online tool to remove background from images using AI. No signup required, process images directly in your browser.">
+    <meta name="description"
+        content="Free online tool to remove background from images using AI. No signup required, process images directly in your browser.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
     <style>
         :root {
             --primary-color: #4F46E5;
@@ -108,6 +111,44 @@
             align-items: center;
             justify-content: center;
             gap: 0.75rem;
+            flex-direction: column;
+            min-height: 80px;
+        }
+
+        .status-text {
+            min-height: 1.5em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.5;
+            min-width: 300px;
+            font-family: monospace;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .progress-bar {
+            width: 100%;
+            max-width: 300px;
+            height: 4px;
+            background-color: var(--border-color);
+            border-radius: 2px;
+            overflow: hidden;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .status-bar.loading .progress-bar {
+            display: block;
+            opacity: 1;
+        }
+
+        .progress-bar-inner {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0%;
+            transition: width 0.2s ease;
         }
 
         .status-bar.loading {
@@ -130,14 +171,24 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         /* Remove old loading animation */
         @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
         }
 
         .status-bar.loading {
@@ -360,16 +411,22 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         @keyframes slideIn {
-            from { 
+            from {
                 opacity: 0;
                 transform: translate(-50%, -60%);
             }
-            to { 
+
+            to {
                 opacity: 1;
                 transform: translate(-50%, -50%);
             }
@@ -397,15 +454,23 @@
         <header class="header">
             <h1 class="header-title">Free Background Remover</h1>
             <div class="header-links">
-                <a href="https://github.com/shalom-lab/remove-background" target="_blank" rel="noopener noreferrer" class="header-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                <a href="https://github.com/shalom-lab/remove-background" target="_blank" rel="noopener noreferrer"
+                    class="header-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22">
+                        </path>
                     </svg>
                     GitHub
                 </a>
-                <a href="https://twitter.com/share?url=https://shalom-lab.github.io/remove-background&text=Try this free online background remover - no signup required!" target="_blank" rel="noopener noreferrer" class="header-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
+                <a href="https://twitter.com/share?url=https://shalom-lab.github.io/remove-background&text=Try this free online background remover - no signup required!"
+                    target="_blank" rel="noopener noreferrer" class="header-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z">
+                        </path>
                     </svg>
                     Share
                 </a>
@@ -414,6 +479,9 @@
         <div class="status-bar" id="statusBar">
             <div class="spinner"></div>
             <span class="status-text">Ready to process images</span>
+            <div class="progress-bar">
+                <div class="progress-bar-inner"></div>
+            </div>
         </div>
 
         <div class="image-container">
@@ -431,7 +499,8 @@
             <div class="button-wrapper">
                 <input type="file" id="imageInput" accept="image/*" style="display: none;">
                 <button class="upload-btn" onclick="document.getElementById('imageInput').click()" id="upload-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="17 8 12 3 7 8"></polyline>
                         <line x1="12" y1="3" x2="12" y2="15"></line>
@@ -441,7 +510,8 @@
             </div>
             <div class="button-wrapper">
                 <button id="removeBackgroundBtn" class="upload-btn" disabled>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"></path>
                         <line x1="16" y1="5" x2="22" y2="5"></line>
                         <line x1="19" y1="2" x2="19" y2="8"></line>
@@ -451,7 +521,8 @@
             </div>
             <div class="button-wrapper">
                 <button id="downloadBtn" class="upload-btn" disabled>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>
                         <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -465,19 +536,6 @@
     <script type="module">
         import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.2';
 
-        // Register Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(registration => {
-                        console.log('ServiceWorker registration successful:', registration.scope);
-                    })
-                    .catch(error => {
-                        console.log('ServiceWorker registration failed:', error);
-                    });
-            });
-        }
-
         let pipe = null;
         const statusBar = document.getElementById('statusBar');
         const removeBackgroundBtn = document.getElementById('removeBackgroundBtn');
@@ -490,7 +548,7 @@
         // Update status bar
         function updateStatus(message) {
             const statusText = statusBar.querySelector('.status-text');
-            
+
             // Define status messages with emojis
             const statusWithEmoji = {
                 "Ready to process images": "🎯 Ready to process images",
@@ -498,7 +556,8 @@
                 "Loading cached model...": "📦 Loading cached model...",
                 "Model loaded from cache!": "✨ Model loaded from cache!",
                 "Downloading model...": "⬇️ Downloading model...",
-                "Model ready!": "🚀 Model ready!",
+                "Loading model...": "📦 Loading model...",
+                "Model ready!": "✨ Model ready!",
                 "Loading cancelled. Refresh to retry.": "❌ Loading cancelled. Refresh to retry.",
                 "Loading failed. Check connection and refresh.": "⚠️ Loading failed. Check connection and refresh.",
                 "Model not loaded. Please wait...": "⏳ Model not loaded. Please wait...",
@@ -508,18 +567,19 @@
                 "Processing failed. Please try again.": "❌ Processing failed. Please try again."
             };
 
-            // Add emoji to message if it exists in the mapping
-            const messageWithEmoji = statusWithEmoji[message] || message;
+            // Add emoji to message if it exists in the mapping, otherwise add 'ℹ️' as default
+            const messageWithEmoji = statusWithEmoji[message] || `ℹ️ ${message}`;
             statusText.textContent = messageWithEmoji;
-            
-            // Add loading class for specific messages
+
+            // Add loading class for specific messages that need the loading spinner
             const loadingMessages = [
                 "🔍 Checking local cache...",
                 "📦 Loading cached model...",
+                "📦 Loading model...",
                 "⬇️ Downloading model...",
                 "⚡ Processing..."
             ];
-            
+
             if (loadingMessages.includes(messageWithEmoji)) {
                 statusBar.classList.add('loading');
             } else {
@@ -556,7 +616,7 @@
         }
 
         // Handle modal button clicks
-        window.handleModalResponse = function(response) {
+        window.handleModalResponse = function (response) {
             const modal = document.getElementById('confirmModal');
             modal.style.display = 'none';
             if (modalResolve) {
@@ -565,71 +625,58 @@
             }
         };
 
-        // Initialize the pipeline
-        async function initializePipeline() {
-            try {
-                updateStatus("Checking local cache...");
-                document.getElementById('upload-btn').disabled = true;
+        // Add progress tracking
+        function updateProgress(loaded, total) {
+            const progressBar = document.querySelector('.progress-bar-inner');
+            const percentage = (loaded / total) * 100;
+            progressBar.style.width = `${percentage}%`;
 
-                // Check if model is cached in Service Worker
-                const modelFiles = [
-                    'https://huggingface.co/briaai/RMBG-1.4/resolve/main/config.json',
-                    'https://huggingface.co/briaai/RMBG-1.4/resolve/main/pytorch_model.bin'
-                ];
-
-                let allCached = true;
-                if ('caches' in window) {
-                    const cache = await caches.open('rmbg-model-cache-v1');
-                    for (const url of modelFiles) {
-                        const response = await cache.match(url);
-                        if (!response) {
-                            allCached = false;
-                            break;
-                        }
-                    }
-                }
-
-                if (allCached) {
-                    updateStatus("Loading cached model...");
-                    pipe = await pipeline("image-segmentation", "briaai/RMBG-1.4", {
-                        trust_remote_code: true,
-                        cache: true
-                    });
-                    updateStatus("Model loaded from cache!");
-                } else {
-                    // Show confirm dialog for downloading
-                    const loadFromNetwork = await showConfirmDialog();
-                    
-                    if (loadFromNetwork) {
-                        updateStatus("Downloading model...");
-                        pipe = await pipeline("image-segmentation", "briaai/RMBG-1.4", {
-                            trust_remote_code: true,
-                            cache: true
-                        });
-                        updateStatus("Model ready!");
-                    } else {
-                        throw new Error("Model loading cancelled");
-                    }
-                }
-
-                document.getElementById('upload-btn').disabled = false;
-            } catch (error) {
-                console.error('Error loading model:', error);
-                updateStatus(error.message === "Model loading cancelled" 
-                    ? "Loading cancelled. Refresh to retry." 
-                    : "Loading failed. Check connection and refresh.");
-                document.getElementById('upload-btn').disabled = true;
-                throw error;
-            }
+            // Update status text with progress
+            const statusText = document.querySelector('.status-text');
+            const downloadSpeed = (loaded / 1024 / 1024).toFixed(1); // Convert to MB
+            statusText.textContent = `⬇️ Downloading model... ${downloadSpeed}MB / ${(total / 1024 / 1024).toFixed(1)}MB`;
         }
 
         // Initialize the pipeline when the page loads
         document.addEventListener('DOMContentLoaded', async () => {
+            // Register Service Worker
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registration = await navigator.serviceWorker.register('/sw.js');
+                    console.log('Service Worker registered with scope:', registration.scope);
+                } catch (error) {
+                    console.log('Service Worker registration failed:', error);
+                }
+            }
+
             try {
                 document.getElementById('upload-btn').disabled = true;
-                await initializePipeline();
+                updateStatus("🔍 Checking local cache...");
+
+                // Set up Service Worker message handler for progress updates
+                if (navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.addEventListener('message', event => {
+                        if (event.data.type === 'download_progress') {
+                            updateProgress(event.data.loaded, event.data.total);
+                            // Update status text with progress
+                            updateStatus(`⬇️ Downloading model... ${(event.data.loaded / 1024 / 1024).toFixed(1)}MB / ${(event.data.total / 1024 / 1024).toFixed(1)}MB`);
+                        }
+                    });
+                }
+
+                // Initialize pipeline
+                updateStatus("📦 Loading model...");
+                pipe = await pipeline("image-segmentation", "briaai/RMBG-2.0", {
+                    trust_remote_code: true
+                    //dtype: 'q8'
+                });
+
+                updateStatus("✨ Model ready!");
+                document.getElementById('upload-btn').disabled = false;
             } catch (error) {
-                console.error('Failed to initialize pipeline:', error);
+                console.error('Pipeline initialization failed:', error);
+                updateStatus("⚠️ Loading failed. Check connection and refresh.");
+                document.getElementById('upload-btn').disabled = true;
             }
         });
 
@@ -727,10 +774,10 @@
                         const maskX = Math.floor(x / scaleX);
                         const maskY = Math.floor(y / scaleY);
                         const maskIndex = maskY * mask.width + maskX;
-                        
+
                         // Calculate target image position
                         const imageIndex = (y * orig_width + x) * 4;
-                        
+
                         // Set alpha channel
                         const alpha = Math.round(maskArray[maskIndex] * 255);
                         data[imageIndex + 3] = alpha;
