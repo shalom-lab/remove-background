@@ -724,134 +724,154 @@
         import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.2';
         import i18n from './i18n.js';
 
-        let pipe = null;
-        const statusBar = document.getElementById('statusBar');
-        const removeBackgroundBtn = document.getElementById('removeBackgroundBtn');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const originalImage = document.getElementById('originalImage');
-        const resultImage = document.getElementById('resultImage');
-        const dropZone = document.getElementById('dropZone');
-        let originalFileName = '';
-        let modalResolve = null;
-
-        // Language handling
-        let currentLang = localStorage.getItem('lang') || navigator.language.split('-')[0] || 'en';
-        if (!i18n[currentLang]) currentLang = 'en';
-        
-        const langSelect = document.getElementById('langSelect');
-        langSelect.value = currentLang;
-        
-        function updateTexts() {
-            const texts = i18n[currentLang];
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (key.includes('.')) {
-                    const [section, subKey] = key.split('.');
-                    el.textContent = texts[section][subKey];
-                } else {
-                    el.textContent = texts[key];
-                }
-            });
-            
-            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-                const key = el.getAttribute('data-i18n-placeholder');
-                el.placeholder = texts[key];
-            });
-        }
-        
-        langSelect.addEventListener('change', (e) => {
-            currentLang = e.target.value;
-            localStorage.setItem('lang', currentLang);
-            updateTexts();
-        });
-        
-        // Update texts on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            updateTexts();
-        });
-
-        // Update status bar
-        function updateStatus(message) {
-            const statusText = statusBar.querySelector('.status-text');
-            const progressBar = document.querySelector('.progress-bar');
-            
-            // Get the status message from i18n
-            const statusMessages = i18n[currentLang].status;
-            const messageWithEmoji = statusMessages[message] || message;
-            
-            statusText.textContent = messageWithEmoji;
-            
-            const showProgressStates = [
-                statusMessages.loading,
-                statusMessages.downloading,
-                statusMessages.processing
-            ];
-            
-            if (showProgressStates.includes(messageWithEmoji)) {
-                progressBar.style.display = 'block';
-                progressBar.style.opacity = '1';
-                statusBar.classList.add('loading');
-            } else {
-                progressBar.style.display = 'none';
-                progressBar.style.opacity = '0';
-                statusBar.classList.remove('loading');
-                document.querySelector('.progress-bar-inner').style.width = '0%';
-            }
-        }
-
-        // Update progress
-        function updateProgress(loaded, total) {
-            const progressBar = document.querySelector('.progress-bar-inner');
-            const percentage = (loaded / total) * 100;
-            progressBar.style.width = `${percentage}%`;
-
-            // Update status text with progress
-            const downloadSpeed = (loaded / 1024 / 1024).toFixed(1); // Convert to MB
-            const totalSize = (total / 1024 / 1024).toFixed(1); // Convert to MB
-            const statusText = document.querySelector('.status-text');
-            statusText.textContent = i18n[currentLang].status.downloading + ` ${downloadSpeed}MB / ${totalSize}MB`;
-        }
-
-        // Show/hide image
-        function toggleImageVisibility(img, show) {
-            if (show) {
-                img.classList.add('visible');
-            } else {
-                img.classList.remove('visible');
-            }
-        }
-
-        // Download function
-        function downloadResult() {
-            const link = document.createElement('a');
-            // 从原始文件名中提取基本名称（不包含扩展名）
-            const baseName = originalFileName.substring(0, originalFileName.lastIndexOf('.')) || originalFileName;
-            link.download = `${baseName}_rmbg.png`;
-            link.href = resultImage.src;
-            link.click();
-        }
-
-        // Custom confirm dialog
-        function showConfirmDialog(message) {
-            return new Promise((resolve) => {
-                modalResolve = resolve;
-                const modal = document.getElementById('confirmModal');
-                modal.style.display = 'block';
-            });
-        }
-
-        // Handle modal button clicks
-        window.handleModalResponse = function (response) {
-            const modal = document.getElementById('confirmModal');
-            modal.style.display = 'none';
-            if (modalResolve) {
-                modalResolve(response);
-                modalResolve = null;
-            }
-        };
-
-        // Initialize the pipeline when the page loads
+        // 等待 DOM 完全加载
         document.addEventListener('DOMContentLoaded', async () => {
+            // 获取所有需要的 DOM 元素
+            const statusBar = document.getElementById('statusBar');
+            const removeBackgroundBtn = document.getElementById('removeBackgroundBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const originalImage = document.getElementById('originalImage');
+            const resultImage = document.getElementById('resultImage');
+            const dropZone = document.getElementById('dropZone');
+            const uploadBtn = document.getElementById('upload-btn');
+            const urlInput = document.getElementById('imageUrl');
+            const langSelect = document.getElementById('langSelect');
+
+            let pipe = null;
+            let originalFileName = '';
+            let modalResolve = null;
+
+            // Language handling
+            let currentLang = localStorage.getItem('lang') || navigator.language.split('-')[0] || 'en';
+            if (!i18n[currentLang]) currentLang = 'en';
+            
+            if (langSelect) {
+                langSelect.value = currentLang;
+            }
+            
+            function updateTexts() {
+                const texts = i18n[currentLang];
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    if (key.includes('.')) {
+                        const [section, subKey] = key.split('.');
+                        el.textContent = texts[section][subKey];
+                    } else {
+                        el.textContent = texts[key];
+                    }
+                });
+                
+                document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                    const key = el.getAttribute('data-i18n-placeholder');
+                    el.placeholder = texts[key];
+                });
+            }
+            
+            if (langSelect) {
+                langSelect.addEventListener('change', (e) => {
+                    currentLang = e.target.value;
+                    localStorage.setItem('lang', currentLang);
+                    updateTexts();
+                });
+            }
+            
+            // Update texts on page load
+            updateTexts();
+
+            // Update status bar
+            function updateStatus(message) {
+                if (!statusBar) return;
+                const statusText = statusBar.querySelector('.status-text');
+                const progressBar = document.querySelector('.progress-bar');
+                if (!statusText || !progressBar) return;
+                
+                // Get the status message from i18n
+                const statusMessages = i18n[currentLang].status;
+                const messageWithEmoji = statusMessages[message] || message;
+                
+                statusText.textContent = messageWithEmoji;
+                
+                const showProgressStates = [
+                    statusMessages.loading,
+                    statusMessages.downloading,
+                    statusMessages.processing
+                ];
+                
+                if (showProgressStates.includes(messageWithEmoji)) {
+                    progressBar.style.display = 'block';
+                    progressBar.style.opacity = '1';
+                    statusBar.classList.add('loading');
+                } else {
+                    progressBar.style.display = 'none';
+                    progressBar.style.opacity = '0';
+                    statusBar.classList.remove('loading');
+                    const progressBarInner = document.querySelector('.progress-bar-inner');
+                    if (progressBarInner) {
+                        progressBarInner.style.width = '0%';
+                    }
+                }
+            }
+
+            // Update progress
+            function updateProgress(loaded, total) {
+                const progressBar = document.querySelector('.progress-bar-inner');
+                if (!progressBar) return;
+                
+                const percentage = (loaded / total) * 100;
+                progressBar.style.width = `${percentage}%`;
+
+                // Update status text with progress
+                const downloadSpeed = (loaded / 1024 / 1024).toFixed(1); // Convert to MB
+                const totalSize = (total / 1024 / 1024).toFixed(1); // Convert to MB
+                const statusText = document.querySelector('.status-text');
+                if (statusText) {
+                    statusText.textContent = i18n[currentLang].status.downloading + ` ${downloadSpeed}MB / ${totalSize}MB`;
+                }
+            }
+
+            // Show/hide image
+            function toggleImageVisibility(img, show) {
+                if (!img) return;
+                if (show) {
+                    img.classList.add('visible');
+                } else {
+                    img.classList.remove('visible');
+                }
+            }
+
+            // Download function
+            function downloadResult() {
+                if (!resultImage || !originalFileName) return;
+                const link = document.createElement('a');
+                const baseName = originalFileName.substring(0, originalFileName.lastIndexOf('.')) || originalFileName;
+                link.download = `${baseName}_rmbg.png`;
+                link.href = resultImage.src;
+                link.click();
+            }
+
+            // Custom confirm dialog
+            function showConfirmDialog(message) {
+                return new Promise((resolve) => {
+                    modalResolve = resolve;
+                    const modal = document.getElementById('confirmModal');
+                    if (modal) {
+                        modal.style.display = 'block';
+                    }
+                });
+            }
+
+            // Handle modal button clicks
+            window.handleModalResponse = function (response) {
+                const modal = document.getElementById('confirmModal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+                if (modalResolve) {
+                    modalResolve(response);
+                    modalResolve = null;
+                }
+            };
+
             // Register Service Worker
             if ('serviceWorker' in navigator) {
                 try {
@@ -864,9 +884,11 @@
                     navigator.serviceWorker.addEventListener('message', event => {
                         if (event.data.type === 'download_progress') {
                             const progressBar = document.querySelector('.progress-bar');
-                            progressBar.style.display = 'block';
-                            progressBar.style.opacity = '1';
-                            updateProgress(event.data.loaded, event.data.total);
+                            if (progressBar) {
+                                progressBar.style.display = 'block';
+                                progressBar.style.opacity = '1';
+                                updateProgress(event.data.loaded, event.data.total);
+                            }
                         }
                     });
                 } catch (error) {
@@ -875,7 +897,6 @@
             }
 
             try {
-                document.getElementById('upload-btn').disabled = true;
                 updateStatus('ready');
 
                 // Initialize pipeline
@@ -885,303 +906,313 @@
                 });
 
                 updateStatus('modelReady');
-                document.getElementById('upload-btn').disabled = false;
             } catch (error) {
                 console.error('Pipeline initialization failed:', error);
                 updateStatus('failed');
-                document.getElementById('upload-btn').disabled = true;
-            }
-        });
-
-        // Load image from URL
-        async function loadImageFromUrl() {
-            const urlInput = document.getElementById('imageUrl');
-            const url = urlInput.value.trim();
-            
-            if (!url) {
-                updateStatus('urlEmpty');
-                return;
             }
 
-            try {
-                updateStatus('loadingUrl');
+            // Load image from URL
+            async function loadImageFromUrl() {
+                if (!urlInput) return;
+                const url = urlInput.value.trim();
                 
-                // Create a new image element to check if the URL is valid
-                const img = new Image();
-                img.crossOrigin = "anonymous";  // Enable CORS
-                
-                // Create a promise to handle image loading
-                const imageLoadPromise = new Promise((resolve, reject) => {
-                    img.onload = () => resolve(img);
-                    img.onerror = () => reject(new Error('Failed to load image'));
-                });
+                if (!url) {
+                    updateStatus('urlEmpty');
+                    return;
+                }
 
-                // Start loading the image
-                img.src = url;
-                
-                // Wait for image to load
-                await imageLoadPromise;
-                
-                // Convert image to blob
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                
-                // Get blob from canvas
-                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-                
-                // Extract filename from URL
-                const fileName = url.split('/').pop() || 'image.png';
-                handleImageData(blob, fileName);
-                urlInput.value = ''; // Clear input after successful load
-                
-                updateStatus('imageLoaded');
-            } catch (error) {
-                console.error('Error loading image from URL:', error);
-                updateStatus('urlFailed');
-            }
-        }
+                try {
+                    updateStatus('loadingUrl');
+                    
+                    // Create a new image element to check if the URL is valid
+                    const img = new Image();
+                    img.crossOrigin = "anonymous";  // Enable CORS
+                    
+                    // Create a promise to handle image loading
+                    const imageLoadPromise = new Promise((resolve, reject) => {
+                        img.onload = () => resolve(img);
+                        img.onerror = () => reject(new Error('Failed to load image'));
+                    });
 
-        // Handle clipboard paste
-        document.addEventListener('paste', async (e) => {
-            // Don't prevent default for text inputs
-            const activeElement = document.activeElement;
-            if (activeElement.tagName === 'INPUT' && activeElement.type === 'text') {
-                return;
-            }
-
-            e.preventDefault();
-            const items = e.clipboardData?.items;
-
-            if (!items) return;
-
-            let handled = false;
-
-            // First try to find an image
-            for (const item of items) {
-                if (item.type.startsWith('image/')) {
-                    const blob = item.getAsFile();
-                    if (blob) {
-                        handleImageData(blob, 'clipboard-image.png');
-                        handled = true;
-                        break;
-                    }
+                    // Start loading the image
+                    img.src = url;
+                    
+                    // Wait for image to load
+                    await imageLoadPromise;
+                    
+                    // Convert image to blob
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // Get blob from canvas
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                    
+                    // Extract filename from URL
+                    const fileName = url.split('/').pop() || 'image.png';
+                    handleImageData(blob, fileName);
+                    urlInput.value = ''; // Clear input after successful load
+                    
+                    updateStatus('imageLoaded');
+                } catch (error) {
+                    console.error('Error loading image from URL:', error);
+                    updateStatus('urlFailed');
                 }
             }
 
-            // If no image found, try to find text that might be an image URL
-            if (!handled) {
-                for (const item of items) {
-                    if (item.type === 'text/plain') {
-                        item.getAsString(text => {
-                            const urlInput = document.getElementById('imageUrl');
-                            if (text.trim().toLowerCase().match(/^https?:\/\/.+\.(png|jpg|jpeg|gif|webp)$/i)) {
-                                urlInput.value = text;
-                                loadImageFromUrl();
-                            }
-                        });
-                        break;
-                    }
+            // Common function to handle image data
+            function handleImageData(blob, fileName) {
+                if (pipe == null) {
+                    updateStatus('notLoaded');
+                    if (removeBackgroundBtn) removeBackgroundBtn.disabled = true;
+                    if (downloadBtn) downloadBtn.disabled = true;
+                    toggleImageVisibility(originalImage, false);
+                    toggleImageVisibility(resultImage, false);
+                    return;
                 }
+
+                originalFileName = fileName;
+                if (originalImage) {
+                    originalImage.src = URL.createObjectURL(blob);
+                    toggleImageVisibility(originalImage, true);
+                }
+                if (resultImage) {
+                    toggleImageVisibility(resultImage, false);
+                }
+                if (removeBackgroundBtn) removeBackgroundBtn.disabled = false;
+                if (downloadBtn) downloadBtn.disabled = true;
+                updateStatus('imageUploaded');
             }
-        });
 
-        // Add keyboard event listener for URL input
-        const urlInput = document.getElementById('imageUrl');
+            // Handle clipboard paste
+            document.addEventListener('paste', async (e) => {
+                const activeElement = document.activeElement;
+                if (activeElement.tagName === 'INPUT' && activeElement.type === 'text') {
+                    return;
+                }
 
-        urlInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
                 e.preventDefault();
-                loadImageFromUrl();
-            }
-        });
+                const items = e.clipboardData?.items;
 
-        // Auto select content when input is focused
-        urlInput.addEventListener('focus', function () {
-            this.select();
-        });
+                if (!items) return;
 
-        // Handle paste event for URL input
-        urlInput.addEventListener('paste', function (e) {
-            // Don't prevent default for URL input
-            setTimeout(() => {
-                if (this.value.trim()) {
-                    loadImageFromUrl();
-                }
-            }, 100);
-        });
+                let handled = false;
 
-        // Handle drag and drop
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('drag-over');
-        });
-
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('drag-over');
-        });
-
-        dropZone.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('drag-over');
-
-            const items = e.dataTransfer?.items || e.dataTransfer?.files;
-
-            if (!items) return;
-
-            // Handle both DataTransferItemList and FileList
-            if (items instanceof DataTransferItemList) {
+                // First try to find an image
                 for (const item of items) {
                     if (item.type.startsWith('image/')) {
-                        const file = item.getAsFile();
-                        if (file) {
-                            handleImageData(file, file.name);
+                        const blob = item.getAsFile();
+                        if (blob) {
+                            handleImageData(blob, 'clipboard-image.png');
+                            handled = true;
                             break;
                         }
                     }
                 }
-            } else if (items instanceof FileList) {
-                for (const file of items) {
-                    if (file.type.startsWith('image/')) {
-                        handleImageData(file, file.name);
-                        break;
+
+                // If no image found, try to find text that might be an image URL
+                if (!handled) {
+                    for (const item of items) {
+                        if (item.type === 'text/plain') {
+                            item.getAsString(text => {
+                                if (urlInput && text.trim().toLowerCase().match(/^https?:\/\/.+\.(png|jpg|jpeg|gif|webp)$/i)) {
+                                    urlInput.value = text;
+                                    loadImageFromUrl();
+                                }
+                            });
+                            break;
+                        }
                     }
                 }
-            }
-        });
+            });
 
-        // Common function to handle image data
-        function handleImageData(blob, fileName) {
-            if (pipe == null) {
-                updateStatus('notLoaded');
-                removeBackgroundBtn.disabled = true;
-                downloadBtn.disabled = true;
-                toggleImageVisibility(originalImage, false);
-                toggleImageVisibility(resultImage, false);
-                return;
-            }
-
-            originalFileName = fileName;
-            originalImage.src = URL.createObjectURL(blob);
-            toggleImageVisibility(originalImage, true);
-            toggleImageVisibility(resultImage, false);
-            removeBackgroundBtn.disabled = false;
-            downloadBtn.disabled = true;
-            updateStatus('imageUploaded');
-        }
-
-        // Handle file input change
-        document.getElementById('imageInput').addEventListener('change', async function (e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            handleImageData(file, file.name);
-        });
-
-        // Handle remove background button click
-        document.getElementById('removeBackgroundBtn').addEventListener('click', async function () {
-            updateStatus('processing');
-            removeBackgroundBtn.disabled = true;
-            downloadBtn.disabled = true;  // Ensure download button is disabled during processing
-
-            try {
-                const pillow_mask = await pipe(originalImage.src);
-                console.log('Pipeline output:', pillow_mask);
-
-                if (!pillow_mask || !pillow_mask[0] || !pillow_mask[0].mask) {
-                    throw new Error('Invalid model output');
-                }
-
-                const mask = pillow_mask[0].mask;
-                console.log('Mask dimensions:', { width: mask.width, height: mask.height });
-
-                // Get original image dimensions
-                const orig_width = originalImage.naturalWidth;
-                const orig_height = originalImage.naturalHeight;
-
-                // Create canvas for result
-                const canvas = document.createElement('canvas');
-                canvas.width = orig_width;
-                canvas.height = orig_height;
-                const ctx = canvas.getContext('2d');
-
-                // Draw original image first
-                ctx.drawImage(originalImage, 0, 0);
-                const imageData = ctx.getImageData(0, 0, orig_width, orig_height);
-
-                // Process mask data
-                if (!mask || !mask.data || !mask.width || !mask.height) {
-                    throw new Error('Invalid mask data');
-                }
-
-                // Convert mask data to array
-                const maskArray = new Float32Array(mask.width * mask.height);
-                let min = Infinity;
-                let max = -Infinity;
-
-                // Find min and max values
-                for (let i = 0; i < mask.width * mask.height; i++) {
-                    const value = mask.data[i] || 0;
-                    maskArray[i] = value;
-                    min = Math.min(min, value);
-                    max = Math.max(max, value);
-                }
-
-                // Normalize values
-                for (let i = 0; i < maskArray.length; i++) {
-                    maskArray[i] = (maskArray[i] - min) / (max - min);
-                }
-
-                // Apply mask to image alpha channel
-                const data = imageData.data;
-                const scaleX = orig_width / mask.width;
-                const scaleY = orig_height / mask.height;
-
-                for (let y = 0; y < orig_height; y++) {
-                    for (let x = 0; x < orig_width; x++) {
-                        // Calculate mask position
-                        const maskX = Math.floor(x / scaleX);
-                        const maskY = Math.floor(y / scaleY);
-                        const maskIndex = maskY * mask.width + maskX;
-
-                        // Calculate target image position
-                        const imageIndex = (y * orig_width + x) * 4;
-
-                        // Set alpha channel
-                        const alpha = Math.round(maskArray[maskIndex] * 255);
-                        data[imageIndex + 3] = alpha;
+            // Add keyboard event listener for URL input
+            if (urlInput) {
+                urlInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        loadImageFromUrl();
                     }
-                }
+                });
 
-                // Put processed data back to canvas
-                ctx.putImageData(imageData, 0, 0);
+                // Auto select content when input is focused
+                urlInput.addEventListener('focus', function () {
+                    this.select();
+                });
 
-                // Convert to PNG and display
-                canvas.toBlob((blob) => {
-                    if (blob) {
-                        resultImage.src = URL.createObjectURL(blob);
-                        toggleImageVisibility(resultImage, true);
-                        updateStatus('done');
-                        downloadBtn.disabled = false;  // Enable download button only after successful processing
-                    } else {
-                        console.error('Failed to create image blob.');
+                // Handle paste event for URL input
+                urlInput.addEventListener('paste', function (e) {
+                    setTimeout(() => {
+                        if (this.value.trim()) {
+                            loadImageFromUrl();
+                        }
+                    }, 100);
+                });
+            }
+
+            // Handle drag and drop
+            if (dropZone) {
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.add('drag-over');
+                });
+
+                dropZone.addEventListener('dragleave', () => {
+                    dropZone.classList.remove('drag-over');
+                });
+
+                dropZone.addEventListener('drop', async (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('drag-over');
+
+                    const items = e.dataTransfer?.items || e.dataTransfer?.files;
+
+                    if (!items) return;
+
+                    // Handle both DataTransferItemList and FileList
+                    if (items instanceof DataTransferItemList) {
+                        for (const item of items) {
+                            if (item.type.startsWith('image/')) {
+                                const file = item.getAsFile();
+                                if (file) {
+                                    handleImageData(file, file.name);
+                                    break;
+                                }
+                            }
+                        }
+                    } else if (items instanceof FileList) {
+                        for (const file of items) {
+                            if (file.type.startsWith('image/')) {
+                                handleImageData(file, file.name);
+                                break;
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Handle file input change
+            const imageInput = document.getElementById('imageInput');
+            if (imageInput) {
+                imageInput.addEventListener('change', async function (e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    handleImageData(file, file.name);
+                });
+            }
+
+            // Handle remove background button click
+            if (removeBackgroundBtn) {
+                removeBackgroundBtn.addEventListener('click', async function () {
+                    if (!originalImage || !resultImage) return;
+                    
+                    updateStatus('processing');
+                    removeBackgroundBtn.disabled = true;
+                    if (downloadBtn) downloadBtn.disabled = true;
+
+                    try {
+                        const pillow_mask = await pipe(originalImage.src);
+                        console.log('Pipeline output:', pillow_mask);
+
+                        if (!pillow_mask || !pillow_mask[0] || !pillow_mask[0].mask) {
+                            throw new Error('Invalid model output');
+                        }
+
+                        const mask = pillow_mask[0].mask;
+                        console.log('Mask dimensions:', { width: mask.width, height: mask.height });
+
+                        // Get original image dimensions
+                        const orig_width = originalImage.naturalWidth;
+                        const orig_height = originalImage.naturalHeight;
+
+                        // Create canvas for result
+                        const canvas = document.createElement('canvas');
+                        canvas.width = orig_width;
+                        canvas.height = orig_height;
+                        const ctx = canvas.getContext('2d');
+
+                        // Draw original image first
+                        ctx.drawImage(originalImage, 0, 0);
+                        const imageData = ctx.getImageData(0, 0, orig_width, orig_height);
+
+                        // Process mask data
+                        if (!mask || !mask.data || !mask.width || !mask.height) {
+                            throw new Error('Invalid mask data');
+                        }
+
+                        // Convert mask data to array
+                        const maskArray = new Float32Array(mask.width * mask.height);
+                        let min = Infinity;
+                        let max = -Infinity;
+
+                        // Find min and max values
+                        for (let i = 0; i < mask.width * mask.height; i++) {
+                            const value = mask.data[i] || 0;
+                            maskArray[i] = value;
+                            min = Math.min(min, value);
+                            max = Math.max(max, value);
+                        }
+
+                        // Normalize values
+                        for (let i = 0; i < maskArray.length; i++) {
+                            maskArray[i] = (maskArray[i] - min) / (max - min);
+                        }
+
+                        // Apply mask to image alpha channel
+                        const data = imageData.data;
+                        const scaleX = orig_width / mask.width;
+                        const scaleY = orig_height / mask.height;
+
+                        for (let y = 0; y < orig_height; y++) {
+                            for (let x = 0; x < orig_width; x++) {
+                                // Calculate mask position
+                                const maskX = Math.floor(x / scaleX);
+                                const maskY = Math.floor(y / scaleY);
+                                const maskIndex = maskY * mask.width + maskX;
+
+                                // Calculate target image position
+                                const imageIndex = (y * orig_width + x) * 4;
+
+                                // Set alpha channel
+                                const alpha = Math.round(maskArray[maskIndex] * 255);
+                                data[imageIndex + 3] = alpha;
+                            }
+                        }
+
+                        // Put processed data back to canvas
+                        ctx.putImageData(imageData, 0, 0);
+
+                        // Convert to PNG and display
+                        canvas.toBlob((blob) => {
+                            if (blob) {
+                                resultImage.src = URL.createObjectURL(blob);
+                                toggleImageVisibility(resultImage, true);
+                                updateStatus('done');
+                                if (downloadBtn) downloadBtn.disabled = false;
+                            } else {
+                                console.error('Failed to create image blob.');
+                                updateStatus('processingFailed');
+                                if (downloadBtn) downloadBtn.disabled = true;
+                            }
+                        }, 'image/png');
+                    } catch (error) {
+                        console.error('Error processing image:', error);
                         updateStatus('processingFailed');
-                        downloadBtn.disabled = true;  // Ensure download button stays disabled on failure
+                        toggleImageVisibility(resultImage, false);
+                        if (downloadBtn) downloadBtn.disabled = true;
+                    } finally {
+                        removeBackgroundBtn.disabled = false;
                     }
-                }, 'image/png');
-            } catch (error) {
-                console.error('Error processing image:', error);
-                updateStatus('processingFailed');
-                toggleImageVisibility(resultImage, false);
-                downloadBtn.disabled = true;  // Ensure download button stays disabled on error
-            } finally {
-                removeBackgroundBtn.disabled = false;
+                });
+            }
+
+            // Handle download button click
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', downloadResult);
             }
         });
-
-        // Handle download button click
-        downloadBtn.addEventListener('click', downloadResult);
     </script>
 </body>
 
