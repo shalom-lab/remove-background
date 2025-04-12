@@ -34,23 +34,41 @@ const fetchWithProgress = async (request, client) => {
     if (!response || !response.ok) return response;
 
     const reader = response.body.getReader();
-    const contentLength = +response.headers.get('content-length');
+    const contentLength = +response.headers.get('content-length') || 0;
+    const encoding = response.headers.get('content-encoding') || 'identity';
     let loaded = 0;
+    let lastReportTime = Date.now();
 
     const stream = new ReadableStream({
         async start(controller) {
             while (true) {
                 const {done, value} = await reader.read();
-                if (done) break;
+                if (done) {
+                    // 在完成时发送最终进度
+                    if (client) {
+                        client.postMessage({
+                            type: 'download_progress',
+                            loaded: loaded,
+                            total: Math.max(contentLength, loaded),
+                            done: true
+                        });
+                    }
+                    break;
+                }
                 loaded += value.length;
                 controller.enqueue(value);
                 
-                // Send progress to the client
-                if (client && contentLength) {
+                // 限制进度更新频率，避免过多消息
+                const now = Date.now();
+                if (client && (now - lastReportTime > 100)) {  // 每100ms最多更新一次
+                    lastReportTime = now;
+                    // 如果没有 Content-Length 或实际大小超过 Content-Length，使用当前加载大小作为总大小
+                    const total = contentLength > 0 ? Math.max(contentLength, loaded) : loaded;
                     client.postMessage({
                         type: 'download_progress',
                         loaded,
-                        total: contentLength
+                        total,
+                        compressed: encoding !== 'identity'
                     });
                 }
             }

@@ -813,7 +813,7 @@
             }
 
             // Update progress
-            function updateProgress(loaded, total) {
+            function updateProgress(loaded, total, compressed = false, done = false) {
                 const progressBar = document.querySelector('.progress-bar-inner');
                 if (!progressBar) return;
                 
@@ -825,7 +825,16 @@
                 const totalSize = (total / 1024 / 1024).toFixed(1); // Convert to MB
                 const statusText = document.querySelector('.status-text');
                 if (statusText) {
-                    statusText.textContent = i18n[currentLang].status.downloading + ` ${downloadSpeed}MB / ${totalSize}MB`;
+                    let message = i18n[currentLang].status.downloading;
+                    if (compressed) {
+                        message += ` (${downloadSpeed}MB)`;
+                    } else {
+                        message += ` ${downloadSpeed}MB / ${totalSize}MB`;
+                    }
+                    if (done) {
+                        message = i18n[currentLang].status.downloaded;
+                    }
+                    statusText.textContent = message;
                 }
             }
 
@@ -887,7 +896,12 @@
                             if (progressBar) {
                                 progressBar.style.display = 'block';
                                 progressBar.style.opacity = '1';
-                                updateProgress(event.data.loaded, event.data.total);
+                                updateProgress(
+                                    event.data.loaded,
+                                    event.data.total,
+                                    event.data.compressed,
+                                    event.data.done
+                                );
                             }
                         }
                     });
