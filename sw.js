@@ -69,58 +69,44 @@ const fetchWithProgress = async (request, client) => {
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
     
-    // Skip non-HTTP(S) requests
-    if (!url.protocol.startsWith('http')) {
+    // Skip non-HTTP(S) requests and chrome-extension requests
+    if (!url.protocol.startsWith('http') || 
+        url.protocol === 'chrome-extension:' || 
+        url.protocol === 'chrome:' ||
+        url.protocol === 'chrome-search:' ||
+        url.protocol === 'chrome-devtools:' ||
+        url.protocol === 'devtools:') {
         return;
     }
 
-    const isHuggingFace = url.hostname === 'huggingface.co' || url.hostname.endsWith('huggingface.co');
+    // Skip analytics and other unnecessary requests
+    if (url.hostname.includes('google-analytics.com') ||
+        url.hostname.includes('doubleclick.net')) {
+        return;
+    }
 
-    // For Hugging Face requests, add progress tracking
-    if (isHuggingFace) {
-        event.respondWith(
-            caches.match(event.request).then(async cachedResponse => {
-                if (cachedResponse) {
-                    console.log('[Service Worker] Serving from cache:', url.toString());
-                    return cachedResponse;
-                }
+    event.respondWith(
+        caches.match(event.request).then(async cachedResponse => {
+            if (cachedResponse) {
+                console.log('[Service Worker] Serving from cache:', url.toString());
+                return cachedResponse;
+            }
 
-                console.log('[Service Worker] Fetching from network:', url.toString());
+            console.log('[Service Worker] Fetching from network:', url.toString());
+            try {
                 const client = await clients.get(event.clientId);
                 const networkResponse = await fetchWithProgress(event.request, client);
                 
                 if (networkResponse && networkResponse.ok) {
-                    // Clone the response before caching
                     const responseToCache = networkResponse.clone();
                     const cache = await caches.open(CACHE_NAME);
                     await cache.put(event.request, responseToCache);
                 }
                 return networkResponse;
-            })
-        );
-        return;
-    }
-
-    // For all other requests, use simple cache-first strategy
-    event.respondWith(
-        caches.match(event.request).then(cachedResponse => {
-            if (cachedResponse) {
-                return cachedResponse;
+            } catch (error) {
+                console.error('[Service Worker] Fetch error:', error);
+                throw error;
             }
-
-            return fetch(event.request).then(networkResponse => {
-                if (networkResponse && networkResponse.ok) {
-                    // Clone the response before using it
-                    const responseToCache = networkResponse.clone();
-                    // Wait for the cache operation to complete
-                    return caches.open(CACHE_NAME)
-                        .then(cache => {
-                            cache.put(event.request, responseToCache);
-                            return networkResponse;
-                        });
-                }
-                return networkResponse;
-            });
         })
     );
 }); 

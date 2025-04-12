@@ -4,10 +4,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Free Background Remover - Remove Image Background Online</title>
+    <title>Remove BG - Free Online Background Remover</title>
     <meta name="description"
-        content="Free online tool to remove background from images using AI. No signup required, process images directly in your browser.">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+        content="Remove image backgrounds instantly with AI. Free online tool, no signup required. Process images directly in your browser with advanced AI technology.">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://shalom-lab.github.io/remove-background/">
+    <meta property="og:title" content="Remove BG - Free Online Background Remover">
+    <meta property="og:description"
+        content="Remove image backgrounds instantly with AI. Free online tool, no signup required. Process images directly in your browser.">
+    <meta property="og:image" content="images/screenshot.png">
+    <meta property="og:image:alt" content="Remove BG Tool Preview">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://shalom-lab.github.io/remove-background/">
+    <meta name="twitter:title" content="Remove BG - Free Online Background Remover">
+    <meta name="twitter:description"
+        content="Remove image backgrounds instantly with AI. Free online tool, no signup required. Process images directly in your browser.">
+    <meta property="twitter:image" content="images/screenshot.png">
+    <meta name="twitter:image:alt" content="Remove BG Tool Preview">
+
+    <!-- Additional SEO -->
+    <meta name="keywords"
+        content="background remover, remove background, AI background removal, free background remover, online background remover, image background removal">
+    <meta name="author" content="shalom-lab">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://shalom-lab.github.io/remove-background/">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@700;800&display=swap" rel="stylesheet">
     <link rel="icon" type="image/svg+xml"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
     <style>
@@ -58,15 +84,63 @@
             border-bottom: 1px solid var(--border-color);
         }
 
+        .header-left {
+            display: none;
+        }
+
         .header-title {
-            font-size: 2.5rem;
-            font-weight: 600;
-            color: var(--text-primary);
+            font-size: 2.25rem;
+            font-weight: 800;
             margin: 0;
-            background: linear-gradient(120deg, var(--primary-color), #9333EA);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            padding: 0.5rem 1.25rem;
+            color: var(--primary-color);
+            text-shadow: 
+                -1px -1px 0 #fff,
+                1px -1px 0 #fff,
+                -1px 1px 0 #fff,
+                1px 1px 0 #fff,
+                0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 0.75rem;
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+            letter-spacing: -0.03em;
+            line-height: 1.2;
+        }
+
+        .header-title::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #f8f9fa;
+            background-image: 
+                linear-gradient(45deg, #e5e7eb 25%, transparent 25%),
+                linear-gradient(-45deg, #e5e7eb 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #e5e7eb 75%),
+                linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            border-radius: 0.75rem;
+            z-index: -1;
+            opacity: 0.9;
+        }
+
+        .header-title:hover::before {
+            animation: pattern-shift 60s linear infinite;
+        }
+
+        @keyframes pattern-shift {
+            0% {
+                background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            }
+
+            100% {
+                background-position: 200px 200px, 200px 210px, 210px 190px, 190px 200px;
+            }
         }
 
         .header-links {
@@ -122,9 +196,21 @@
             justify-content: center;
             line-height: 1.5;
             min-width: 300px;
-            font-family: monospace;
+            font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', Consolas, 'Courier New', monospace;
             text-align: center;
             white-space: nowrap;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #4B5563;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            letter-spacing: -0.01em;
+        }
+
+        .status-bar.loading .status-text {
+            color: var(--primary-color);
+            background-color: #EEF2FF;
         }
 
         .progress-bar {
@@ -213,18 +299,42 @@
             border: 2px dashed var(--border-color);
             transition: all 0.3s ease;
             min-height: 300px;
+            cursor: pointer;
         }
 
-        .image-box:hover {
+        .image-box:hover:not(:has(img.visible)) {
             border-color: var(--primary-color);
+            background-color: rgba(79, 70, 229, 0.05);
             transform: translateY(-2px);
         }
 
-        .image-box h3 {
-            font-size: 1.25rem;
-            font-weight: 500;
-            margin-bottom: 1rem;
-            color: var(--text-primary);
+        .image-box.drag-over {
+            border-color: var(--primary-color);
+            background-color: rgba(79, 70, 229, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .image-box .drag-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            text-align: center;
+            pointer-events: none;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+            line-height: 1.8;
+        }
+
+        .image-box:hover .drag-text {
+            opacity: 1;
+            color: var(--primary-color);
+        }
+
+        .image-box img.visible+.drag-text {
+            display: none;
         }
 
         .image-box img {
@@ -238,6 +348,10 @@
 
         .image-box img.visible {
             display: block;
+        }
+
+        .image-box:has(img.visible) {
+            cursor: default;
         }
 
         .button-container {
@@ -306,11 +420,14 @@
             }
 
             .header-title {
-                font-size: 2rem;
+                font-size: 1.875rem;
+                padding: 0.375rem 1rem;
             }
 
             .header-links {
                 justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.5rem;
             }
 
             .image-container {
@@ -455,38 +572,30 @@
             box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
         }
 
-        .image-box {
-            position: relative;
-            background-color: var(--background-color);
-            border-radius: 0.75rem;
-            padding: 1.5rem;
+        /* Update language selector styles */
+        .lang-select {
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            background-color: white;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            height: 36px;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            border: 2px dashed var(--border-color);
-            transition: all 0.3s ease;
-            min-height: 300px;
         }
 
-        .image-box.drag-over {
+        .lang-select:hover {
             border-color: var(--primary-color);
-            background-color: rgba(79, 70, 229, 0.05);
+            color: var(--primary-color);
         }
 
-        .image-box .drag-text {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 1.1rem;
-            color: var(--text-secondary);
-            text-align: center;
-            pointer-events: none;
-            opacity: 0.7;
-        }
-
-        .image-box img.visible + .drag-text {
-            display: none;
+        .lang-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
         }
     </style>
 </head>
@@ -509,8 +618,24 @@
 
     <div class="container">
         <header class="header">
-            <h1 class="header-title">Free Background Remover</h1>
+            <h1 class="header-title" data-i18n="title">Remove Background</h1>
             <div class="header-links">
+                <select id="langSelect" class="lang-select">
+                    <option value="en">English</option>
+                    <option value="zh">中文</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="de">Deutsch</option>
+                    <option value="ja">日本語</option>
+                    <option value="ko">한국어</option>
+                    <option value="ru">Русский</option>
+                    <option value="pt">Português</option>
+                    <option value="it">Italiano</option>
+                    <option value="ar">العربية</option>
+                    <option value="nl">Nederlands</option>
+                    <option value="vi">Tiếng Việt</option>
+                    <option value="id">Indonesia</option>
+                </select>
                 <a href="https://github.com/shalom-lab/remove-background" target="_blank" rel="noopener noreferrer"
                     class="header-link">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -542,42 +667,32 @@
         </div>
 
         <div class="image-container">
-            <div class="image-box" id="dropZone">
-                <h3>Original Image</h3>
+            <div class="image-box" id="dropZone" onclick="document.getElementById('imageInput').click()">
+                <h3 data-i18n="originalImage">Original Image</h3>
                 <img id="originalImage" src="" alt="Original Image">
                 <div class="drag-text">
-                    Drop image here<br>
-                    <small>or paste from clipboard</small>
+                    <span data-i18n="dropText">Drop image here</span><br>
+                    <small data-i18n="pasteHint">or paste from clipboard</small><br>
+                    <small data-i18n="clickHint">or click to upload</small>
                 </div>
             </div>
             <div class="image-box">
-                <h3>Result</h3>
+                <h3 data-i18n="resultImage">Result</h3>
                 <img id="resultImage" src="" alt="Result Image">
             </div>
         </div>
 
         <div class="button-container">
             <div class="button-wrapper url-input-wrapper">
-                <input type="text" id="imageUrl" placeholder="Enter image URL..." class="url-input">
+                <input type="file" id="imageInput" accept="image/*" style="display: none;">
+                <input type="text" id="imageUrl" data-i18n-placeholder="urlPlaceholder" placeholder="Enter image URL..." class="url-input">
                 <button class="upload-btn" onclick="loadImageFromUrl()" id="url-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
                         <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
                     </svg>
-                    Load URL
-                </button>
-            </div>
-            <div class="button-wrapper">
-                <input type="file" id="imageInput" accept="image/*" style="display: none;">
-                <button class="upload-btn" onclick="document.getElementById('imageInput').click()" id="upload-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                    Upload Image
+                    <span data-i18n="loadUrl">Load URL</span>
                 </button>
             </div>
             <div class="button-wrapper">
@@ -588,7 +703,7 @@
                         <line x1="16" y1="5" x2="22" y2="5"></line>
                         <line x1="19" y1="2" x2="19" y2="8"></line>
                     </svg>
-                    Remove Background
+                    <span data-i18n="removeBackground">Remove Background</span>
                 </button>
             </div>
             <div class="button-wrapper">
@@ -599,7 +714,7 @@
                         <polyline points="7 10 12 15 17 10"></polyline>
                         <line x1="12" y1="15" x2="12" y2="3"></line>
                     </svg>
-                    Download
+                    <span data-i18n="download">Download</span>
                 </button>
             </div>
         </div>
@@ -607,6 +722,7 @@
 
     <script type="module">
         import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.2';
+        import i18n from './i18n.js';
 
         let pipe = null;
         const statusBar = document.getElementById('statusBar');
@@ -618,48 +734,82 @@
         let originalFileName = '';
         let modalResolve = null;
 
+        // Language handling
+        let currentLang = localStorage.getItem('lang') || navigator.language.split('-')[0] || 'en';
+        if (!i18n[currentLang]) currentLang = 'en';
+        
+        const langSelect = document.getElementById('langSelect');
+        langSelect.value = currentLang;
+        
+        function updateTexts() {
+            const texts = i18n[currentLang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (key.includes('.')) {
+                    const [section, subKey] = key.split('.');
+                    el.textContent = texts[section][subKey];
+                } else {
+                    el.textContent = texts[key];
+                }
+            });
+            
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                el.placeholder = texts[key];
+            });
+        }
+        
+        langSelect.addEventListener('change', (e) => {
+            currentLang = e.target.value;
+            localStorage.setItem('lang', currentLang);
+            updateTexts();
+        });
+        
+        // Update texts on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateTexts();
+        });
+
         // Update status bar
         function updateStatus(message) {
             const statusText = statusBar.querySelector('.status-text');
-
-            // Define status messages with emojis
-            const statusWithEmoji = {
-                "Ready to process images": "🎯 Ready to process images",
-                "Checking local cache...": "🔍 Checking local cache...",
-                "Loading cached model...": "📦 Loading cached model...",
-                "Model loaded from cache!": "✨ Model loaded from cache!",
-                "Downloading model...": "⬇️ Downloading model...",
-                "Loading model...": "📦 Loading model...",
-                "Model ready!": "✨ Model ready!",
-                "Loading cancelled. Refresh to retry.": "❌ Loading cancelled. Refresh to retry.",
-                "Loading failed. Check connection and refresh.": "⚠️ Loading failed. Check connection and refresh.",
-                "Model not loaded. Please wait...": "⏳ Model not loaded. Please wait...",
-                "Image uploaded. Click 'Remove Background' to process.": "📸 Image uploaded. Click 'Remove Background' to process.",
-                "Processing...": "⚡ Processing...",
-                "Done!": "✨ Done! 🎉 🎊 🌟",
-                "Processing failed. Please try again.": "❌ Processing failed. Please try again.",
-                "Loading image from URL...": "🔗 Loading image from URL...",
-                "Image loaded successfully": "✅ Image loaded successfully!"
-            };
-
-            // Add emoji to message if it exists in the mapping, otherwise add 'ℹ️' as default
-            const messageWithEmoji = statusWithEmoji[message] || `ℹ️ ${message}`;
+            const progressBar = document.querySelector('.progress-bar');
+            
+            // Get the status message from i18n
+            const statusMessages = i18n[currentLang].status;
+            const messageWithEmoji = statusMessages[message] || message;
+            
             statusText.textContent = messageWithEmoji;
-
-            // Add loading class for specific messages that need the loading spinner
-            const loadingMessages = [
-                "🔍 Checking local cache...",
-                "📦 Loading cached model...",
-                "📦 Loading model...",
-                "⬇️ Downloading model...",
-                "⚡ Processing..."
+            
+            const showProgressStates = [
+                statusMessages.loading,
+                statusMessages.downloading,
+                statusMessages.processing
             ];
-
-            if (loadingMessages.includes(messageWithEmoji)) {
+            
+            if (showProgressStates.includes(messageWithEmoji)) {
+                progressBar.style.display = 'block';
+                progressBar.style.opacity = '1';
                 statusBar.classList.add('loading');
             } else {
+                progressBar.style.display = 'none';
+                progressBar.style.opacity = '0';
                 statusBar.classList.remove('loading');
+                document.querySelector('.progress-bar-inner').style.width = '0%';
             }
+        }
+
+        // Update progress
+        function updateProgress(loaded, total) {
+            const progressBar = document.querySelector('.progress-bar-inner');
+            const percentage = (loaded / total) * 100;
+            progressBar.style.width = `${percentage}%`;
+
+            // Update status text with progress
+            const downloadSpeed = (loaded / 1024 / 1024).toFixed(1); // Convert to MB
+            const totalSize = (total / 1024 / 1024).toFixed(1); // Convert to MB
+            const statusText = document.querySelector('.status-text');
+            statusText.textContent = i18n[currentLang].status.downloading + ` ${downloadSpeed}MB / ${totalSize}MB`;
         }
 
         // Show/hide image
@@ -700,19 +850,6 @@
             }
         };
 
-        // Update progress
-        function updateProgress(loaded, total) {
-            const progressBar = document.querySelector('.progress-bar-inner');
-            const percentage = (loaded / total) * 100;
-            progressBar.style.width = `${percentage}%`;
-
-            // Update status text with progress
-            const statusText = document.querySelector('.status-text');
-            const downloadSpeed = (loaded / 1024 / 1024).toFixed(1); // Convert to MB
-            const totalSize = (total / 1024 / 1024).toFixed(1); // Convert to MB
-            updateStatus(`Downloading model... ${downloadSpeed}MB / ${totalSize}MB`);
-        }
-
         // Initialize the pipeline when the page loads
         document.addEventListener('DOMContentLoaded', async () => {
             // Register Service Worker
@@ -725,7 +862,6 @@
 
                     // Set up Service Worker message handler for progress updates
                     navigator.serviceWorker.addEventListener('message', event => {
-                        console.log('Received message from Service Worker:', event.data);
                         if (event.data.type === 'download_progress') {
                             const progressBar = document.querySelector('.progress-bar');
                             progressBar.style.display = 'block';
@@ -740,19 +876,19 @@
 
             try {
                 document.getElementById('upload-btn').disabled = true;
-                updateStatus("Checking local cache...");
+                updateStatus('ready');
 
                 // Initialize pipeline
-                updateStatus("Loading model...");
+                updateStatus('loading');
                 pipe = await pipeline("image-segmentation", "briaai/RMBG-1.4", {
                     trust_remote_code: true
                 });
 
-                updateStatus("Model ready!");
+                updateStatus('modelReady');
                 document.getElementById('upload-btn').disabled = false;
             } catch (error) {
                 console.error('Pipeline initialization failed:', error);
-                updateStatus("Loading failed. Check connection and refresh.");
+                updateStatus('failed');
                 document.getElementById('upload-btn').disabled = true;
             }
         });
@@ -763,12 +899,12 @@
             const url = urlInput.value.trim();
             
             if (!url) {
-                updateStatus("Please enter a valid URL");
+                updateStatus('urlEmpty');
                 return;
             }
 
             try {
-                updateStatus("Loading image from URL...");
+                updateStatus('loadingUrl');
                 
                 // Create a new image element to check if the URL is valid
                 const img = new Image();
@@ -801,10 +937,10 @@
                 handleImageData(blob, fileName);
                 urlInput.value = ''; // Clear input after successful load
                 
-                updateStatus("Image loaded successfully");
+                updateStatus('imageLoaded');
             } catch (error) {
                 console.error('Error loading image from URL:', error);
-                updateStatus("Failed to load image from URL. Make sure the URL is correct and the image is accessible.");
+                updateStatus('urlFailed');
             }
         }
 
@@ -818,11 +954,11 @@
 
             e.preventDefault();
             const items = e.clipboardData?.items;
-            
+
             if (!items) return;
 
             let handled = false;
-            
+
             // First try to find an image
             for (const item of items) {
                 if (item.type.startsWith('image/')) {
@@ -854,7 +990,7 @@
 
         // Add keyboard event listener for URL input
         const urlInput = document.getElementById('imageUrl');
-        
+
         urlInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -863,12 +999,12 @@
         });
 
         // Auto select content when input is focused
-        urlInput.addEventListener('focus', function() {
+        urlInput.addEventListener('focus', function () {
             this.select();
         });
 
         // Handle paste event for URL input
-        urlInput.addEventListener('paste', function(e) {
+        urlInput.addEventListener('paste', function (e) {
             // Don't prevent default for URL input
             setTimeout(() => {
                 if (this.value.trim()) {
@@ -890,9 +1026,9 @@
         dropZone.addEventListener('drop', async (e) => {
             e.preventDefault();
             dropZone.classList.remove('drag-over');
-            
+
             const items = e.dataTransfer?.items || e.dataTransfer?.files;
-            
+
             if (!items) return;
 
             // Handle both DataTransferItemList and FileList
@@ -919,7 +1055,7 @@
         // Common function to handle image data
         function handleImageData(blob, fileName) {
             if (pipe == null) {
-                updateStatus("Model not loaded. Please wait...");
+                updateStatus('notLoaded');
                 removeBackgroundBtn.disabled = true;
                 downloadBtn.disabled = true;
                 toggleImageVisibility(originalImage, false);
@@ -933,7 +1069,7 @@
             toggleImageVisibility(resultImage, false);
             removeBackgroundBtn.disabled = false;
             downloadBtn.disabled = true;
-            updateStatus("Image loaded. Click 'Remove Background' to process.");
+            updateStatus('imageUploaded');
         }
 
         // Handle file input change
@@ -945,7 +1081,7 @@
 
         // Handle remove background button click
         document.getElementById('removeBackgroundBtn').addEventListener('click', async function () {
-            updateStatus("Processing...");
+            updateStatus('processing');
             removeBackgroundBtn.disabled = true;
             downloadBtn.disabled = true;  // Ensure download button is disabled during processing
 
@@ -1026,17 +1162,17 @@
                     if (blob) {
                         resultImage.src = URL.createObjectURL(blob);
                         toggleImageVisibility(resultImage, true);
-                        updateStatus("Done!");
+                        updateStatus('done');
                         downloadBtn.disabled = false;  // Enable download button only after successful processing
                     } else {
                         console.error('Failed to create image blob.');
-                        updateStatus("Processing failed. Please try again.");
+                        updateStatus('processingFailed');
                         downloadBtn.disabled = true;  // Ensure download button stays disabled on failure
                     }
                 }, 'image/png');
             } catch (error) {
                 console.error('Error processing image:', error);
-                updateStatus("Processing failed: " + error.message);
+                updateStatus('processingFailed');
                 toggleImageVisibility(resultImage, false);
                 downloadBtn.disabled = true;  // Ensure download button stays disabled on error
             } finally {
